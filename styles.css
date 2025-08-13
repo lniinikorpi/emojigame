@@ -1,0 +1,72 @@
+/* Navbar text color adapts to theme */
+body.light .navbar, body.light .navbar .navbar-brand, body.light .navbar .btn-outline-light {
+  color: #fff;
+}
+body.dark .navbar, body.dark .navbar .navbar-brand, body.dark .navbar .btn-outline-light {
+  color: #e9ecef;
+}
+/* Card background adapts to theme */
+body.light .card {
+  background-color: #fff;
+  color: #212529;
+}
+body.dark .card {
+  background-color: #23272b;
+  color: #e9ecef;
+}
+/* Dark & light theme colors */
+body.light {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+body.light #navbar {
+  background-color: #0d6efd;
+}
+body.dark {
+  background-color: #121212;
+  color: #e9ecef;
+}
+body.dark #navbar {
+  background-color: #222;
+}
+
+/* Buttons high contrast */
+body.light .btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+body.dark .btn-primary {
+  background-color: #1e90ff;
+  border-color: #1e90ff;
+}
+body.dark .btn-outline-secondary {
+  color: #ccc;
+  border-color: #ccc;
+}
+body.dark .btn-outline-dark {
+  color: #fff;
+  border-color: #fff;
+}
+
+/* Center game vertically and set max width */
+.game-container {
+  min-height: calc(100vh - 56px - 50px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Add spacing between card elements */
+.card-body > *:not(:last-child) {
+  margin-bottom: 3.5rem;
+}
+
+/* Emoji styling */
+#emojiClue {
+  letter-spacing: 0.25rem;
+  user-select: none;
+  word-break: break-word;
+}

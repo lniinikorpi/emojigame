@@ -1,6 +1,35 @@
+/* Clue button (btn-outline-info) darker border and text in light theme */
+body.light .btn-outline-info {
+  color: #052c65;
+  border-color: #052c65;
+}
+body.light .btn-outline-info:hover {
+  color: #fff;
+  background-color: #052c65;
+  border-color: #021634;
+}
+/* Yesterday modal artist color theme support */
+body.light #yesterdayModal .artist-text {
+  color: #495057;
+}
+body.dark #yesterdayModal .artist-text {
+  color: #bfc9d1;
+}
 /* Navbar text color adapts to theme */
 body.light .navbar, body.light .navbar .navbar-brand, body.light .navbar .btn-outline-light {
   color: #fff;
+}
+body.light .navbar .btn-outline-light,
+body.light .navbar .btn-outline-info {
+  background-color: #084298;
+  color: #fff;
+  border-color: #052c65;
+}
+body.light .navbar .btn-outline-light:hover,
+body.light .navbar .btn-outline-info:hover {
+  background-color: #052c65;
+  color: #fff;
+  border-color: #021634;
 }
 body.dark .navbar, body.dark .navbar .navbar-brand, body.dark .navbar .btn-outline-light {
   color: #e9ecef;

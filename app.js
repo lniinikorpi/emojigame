@@ -1,3 +1,40 @@
+// --- Yesterday's Answer Modal Logic ---
+function getYesterdayDateStr() {
+  const now = new Date();
+  now.setDate(now.getDate() - 1);
+  const day = now.getDate();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function showYesterdayAnswer() {
+  const content = document.getElementById('yesterdayAnswerContent');
+  if (!songs || !songs.length) {
+    content.innerHTML = '<span class="text-secondary">Ladataan...</span>';
+    return;
+  }
+  const yesterday = getYesterdayDateStr();
+  const yesterdayNorm = normalizeDate(yesterday);
+  const song = songs.find(s => normalizeDate(s.date) === yesterdayNorm);
+  if (song) {
+    content.innerHTML = `
+      <div class="mb-2" style="font-size:2rem;">${song.emojis || ''}</div>
+      <div class="fw-bold">${song.rawSong}</div>
+      <div class="artist-text">Artisti: ${song.artist}</div>
+    `;
+  } else {
+    content.innerHTML = '<span class="text-danger">Eilisen kappaletta ei löytynyt.</span>';
+  }
+}
+
+// Attach event to modal show
+document.addEventListener('DOMContentLoaded', function() {
+  var yesterdayModal = document.getElementById('yesterdayModal');
+  if (yesterdayModal) {
+    yesterdayModal.addEventListener('show.bs.modal', showYesterdayAnswer);
+  }
+});
 // --- Cookie helpers ---
 function setCookie(name, value, days) {
   const d = new Date();
@@ -249,8 +286,22 @@ themeToggle.addEventListener('click', () => {
 // (Optional) If you want to do something when the help modal is shown, you can add event listeners here.
 // Example: document.getElementById('helpBtn').addEventListener('click', function() { ... });
 // Bootstrap handles modal opening automatically via data-bs-toggle, so no extra JS is required for basic usage.
+
 window.addEventListener('DOMContentLoaded', () => {
   const savedTheme = getCookie('theme') || 'light';
   setTheme(savedTheme);
   loadSongs();
+
+  // Show info modal if not seen before
+  if (!getCookie('info_modal_seen')) {
+    const helpModal = document.getElementById('helpModal');
+    if (helpModal && window.bootstrap) {
+      const modal = new window.bootstrap.Modal(helpModal);
+      modal.show();
+      helpModal.addEventListener('hidden.bs.modal', function handler() {
+        setCookie('info_modal_seen', '1', 365);
+        helpModal.removeEventListener('hidden.bs.modal', handler);
+      });
+    }
+  }
 });

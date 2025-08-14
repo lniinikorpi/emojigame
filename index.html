@@ -12,10 +12,11 @@
     <nav class="navbar navbar-expand-lg" id="navbar">
       <div class="container justify-content-between">
         <a class="navbar-brand fw-semibold" href="#">🎵 Emoji Kappalepeli</a>
-          <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-light" id="themeToggle">🌙</button>
-            <button class="btn btn-sm btn-outline-info" id="helpBtn" type="button" data-bs-toggle="modal" data-bs-target="#helpModal">❓ Ohjeet</button>
-          </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-light" id="themeToggle">🌙</button>
+              <button class="btn btn-sm btn-outline-info" id="yesterdayBtn" type="button" data-bs-toggle="modal" data-bs-target="#yesterdayModal">🕑 Eilisen vastaus</button>
+              <button class="btn btn-sm btn-outline-info" id="helpBtn" type="button" data-bs-toggle="modal" data-bs-target="#helpModal">❓ Ohjeet</button>
+            </div>
       </div>
     </nav>
 
@@ -72,5 +73,24 @@
       </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="app.js"></script>
+      <!-- Yesterday's Answer Modal -->
+      <div class="modal fade" id="yesterdayModal" tabindex="-1" aria-labelledby="yesterdayModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="yesterdayModalLabel">Eilisen oikea vastaus</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sulje"></button>
+            </div>
+            <div class="modal-body text-center">
+              <div id="yesterdayAnswerContent">
+                <span class="text-secondary">Ladataan...</span>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Sulje</button>
+            </div>
+          </div>
+        </div>
+      </div>
   </body>
 </html>

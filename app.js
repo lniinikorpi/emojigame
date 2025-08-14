@@ -246,6 +246,9 @@ themeToggle.addEventListener('click', () => {
 // nextBtn is not used for daily mode
 
 
+// (Optional) If you want to do something when the help modal is shown, you can add event listeners here.
+// Example: document.getElementById('helpBtn').addEventListener('click', function() { ... });
+// Bootstrap handles modal opening automatically via data-bs-toggle, so no extra JS is required for basic usage.
 window.addEventListener('DOMContentLoaded', () => {
   const savedTheme = getCookie('theme') || 'light';
   setTheme(savedTheme);

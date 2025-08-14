@@ -1,15 +1,96 @@
+// --- Cookie helpers ---
+function setCookie(name, value, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + (days*24*60*60*1000));
+  const expires = "expires="+ d.toUTCString();
+  document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+function getCookie(name) {
+  const cname = name + "=";
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const ca = decodedCookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(cname) == 0) {
+      return c.substring(cname.length, c.length);
+    }
+  }
+  return "";
+}
+
+// --- Show current date in title ---
+document.addEventListener('DOMContentLoaded', function() {
+  const dateElem = document.getElementById('currentDate');
+  if (dateElem) {
+    const now = new Date();
+    // Format: 14.8.2025
+    const dateStr = `${now.getDate()}.${now.getMonth()+1}.${now.getFullYear()}`;
+    dateElem.textContent = dateStr;
+  }
+
+  // --- Load score from cookie ---
+  const score = getCookie('score');
+  if (score && !isNaN(Number(score))) {
+    const streakElem = document.getElementById('streak');
+    if (streakElem) {
+      streakElem.textContent = `Pisteet: ${score}`;
+    }
+    window.currentScore = Number(score);
+  } else {
+    window.currentScore = 0;
+  }
+});
+
+// --- Save score to cookie whenever it changes ---
+function updateScore(newScore) {
+  window.currentScore = newScore;
+  setCookie('score', newScore, 30);
+  const streakElem = document.getElementById('streak');
+  if (streakElem) {
+    streakElem.textContent = `Pisteet: ${newScore}`;
+  }
+}
+
+// If your game logic updates the score, replace those updates with updateScore(newScore)
+// For example, if you have code like:
+//   streakElem.textContent = `Pisteet: ${score}`;
+// Replace with:
+//   updateScore(score);
+
 let songs = [];
 let current = null;
 let score = 0;
+let clueUsed = false;
 
 const emojiClueEl = document.getElementById('emojiClue');
 const guessForm = document.getElementById('guessForm');
 const guessInput = document.getElementById('guessInput');
 const feedbackEl = document.getElementById('feedback');
-const skipBtn = document.getElementById('skipBtn');
+const clueBtn = document.getElementById('clueBtn');
 const nextBtn = document.getElementById('nextBtn');
 const streakEl = document.getElementById('streak');
+const artistClueEl = document.getElementById('artistClue');
 const themeToggle = document.getElementById('themeToggle');
+
+function getTodayDateStr() {
+  const now = new Date();
+  const day = now.getDate();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function normalizeDate(dateStr) {
+  // Accepts dd.mm.yyyy or d.m.yyyy, returns d.m.yyyy (no leading zeros)
+  if (!dateStr) return '';
+  const parts = dateStr.split('.');
+  if (parts.length !== 3) return dateStr;
+  return `${parseInt(parts[0], 10)}.${parseInt(parts[1], 10)}.${parts[2]}`;
+}
 
 function parseCSV(text){
   return text
@@ -18,11 +99,14 @@ function parseCSV(text){
     .filter(row => row && !row.startsWith('#'))
     .map(row => {
       const parts = row.split(',');
+      const rawSong = (parts[1] || '').trim();
+      const rawArtist = (parts[2] || '').trim();
       return {
         date: (parts[0] || '').trim(),
-        song: normalize((parts[1] || '').trim()),
-        rawSong: (parts[1] || '').trim(),
-        emojis: (parts.slice(2).join(',') || '').trim()
+        song: normalize(rawSong), // trimmed/lowercase for comparison
+        rawSong: rawSong, // original for display
+        artist: rawArtist,
+        emojis: (parts.slice(3).join(',') || '').trim()
       };
     });
 }
@@ -32,28 +116,78 @@ function normalize(s){
 }
 
 async function loadSongs(){
+  emojiClueEl.innerHTML = '<span class="spinner-border text-secondary" role="status" aria-label="Ladataan"></span>';
+  clueBtn.disabled = true;
+  guessInput.disabled = true;
+  nextBtn.disabled = true;
   const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRGNFw_wdKXWt5c5zMCXqL-fuADH-gLmvEA5J9vA18zfBwaZNot2vkqSDcCqVmw3f67u5JGNoJjai6G/pub?output=csv', { cache: 'no-store' });
   const text = await res.text();
   songs = parseCSV(text).filter(r => r.song && r.emojis);
-  nextRound();
+  clueBtn.disabled = false;
+  guessInput.disabled = false;
+  nextBtn.disabled = false;
+  loadTodaySong();
 }
 
-function nextRound(){
+function loadTodaySong() {
   feedbackEl.classList.add('d-none');
   nextBtn.classList.add('d-none');
-  skipBtn.disabled = false;
-  guessInput.disabled = false;
   guessInput.value = '';
+  guessInput.disabled = false;
   guessInput.focus();
-  current = songs[Math.floor(Math.random() * songs.length)];
+  artistClueEl.classList.add('d-none');
+  artistClueEl.textContent = '';
+  artistClueEl.style.fontSize = '1.5rem';
+  clueUsed = false;
+
+  const today = getTodayDateStr();
+  const todayNorm = normalizeDate(today);
+  const todaySong = songs.find(s => normalizeDate(s.date) === todayNorm);
+  if (!todaySong) {
+    emojiClueEl.textContent = '❓';
+    showFeedback('Tälle päivälle ei löytynyt kappaletta.', 'danger');
+    guessInput.disabled = true;
+    clueBtn.disabled = true;
+    return;
+  }
+  current = todaySong;
   emojiClueEl.textContent = current.emojis || '❓';
+
+  // Check cookies for completion and hint
+  const completed = getCookie('completed_date');
+  const hintUsed = getCookie('hint_date');
+  const submitBtn = document.getElementById('submitBtn');
+  if (completed === today) {
+    showFeedback('Olet jo arvannut tämän päivän kappaleen oikein!', 'success');
+    guessInput.disabled = true;
+    clueBtn.classList.add('d-none');
+    if (submitBtn) submitBtn.disabled = true;
+    nextBtn.classList.add('d-none');
+  } else {
+    feedbackEl.classList.add('d-none');
+    guessInput.disabled = false;
+    clueBtn.classList.remove('d-none');
+    clueBtn.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
+    nextBtn.classList.add('d-none');
+    if (hintUsed === today) {
+      artistClueEl.textContent = 'Artisti: ' + current.artist;
+      artistClueEl.classList.remove('d-none');
+      clueUsed = true;
+      clueBtn.disabled = true;
+    }
+  }
 }
+
+// nextRound removed, replaced by loadTodaySong
 
 function showFeedback(message, type){
   feedbackEl.textContent = message;
   feedbackEl.className = 'alert alert-' + type;
   feedbackEl.classList.remove('d-none');
 }
+
+
 
 guessForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -64,26 +198,31 @@ guessForm.addEventListener('submit', (e) => {
     return;
   }
   if(userGuessNorm === current.song){
-    score++;
-    streakEl.textContent = 'Pisteet: ' + score;
+    score += clueUsed ? 1 : 2;
+    updateScore(score);
     showFeedback('Oikein! Kappale oli: ' + current.rawSong, 'success');
-    skipBtn.disabled = true;
+    document.cookie = `completed_date=${getTodayDateStr()};path=/;max-age=86400`;
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.classList.add('d-none');
     guessInput.disabled = true;
-    nextBtn.classList.remove('d-none');
+    clueBtn.disabled = true;
+    nextBtn.classList.add('d-none');
   }else{
     showFeedback('Ei aivan. Yritä uudelleen!', 'warning');
   }
 });
 
-skipBtn.addEventListener('click', () => {
-  showFeedback('Ohitit. Oikea vastaus oli: ' + current.rawSong, 'secondary');
-  nextBtn.classList.remove('d-none');
-  skipBtn.disabled = true;
-  guessInput.disabled = true;
-});
+// skipBtn removed
 
-nextBtn.addEventListener('click', () => {
-  nextRound();
+
+clueBtn.addEventListener('click', () => {
+  if(current && current.artist){
+    artistClueEl.textContent = 'Artisti: ' + current.artist;
+    artistClueEl.classList.remove('d-none');
+    clueUsed = true;
+    clueBtn.disabled = true;
+    document.cookie = `hint_date=${getTodayDateStr()};path=/;max-age=86400`;
+  }
 });
 
 /* THEME HANDLING */
@@ -103,6 +242,9 @@ themeToggle.addEventListener('click', () => {
   const newTheme = document.body.classList.contains('light') ? 'dark' : 'light';
   setTheme(newTheme);
 });
+
+// nextBtn is not used for daily mode
+
 
 window.addEventListener('DOMContentLoaded', () => {
   const savedTheme = getCookie('theme') || 'light';

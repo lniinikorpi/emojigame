@@ -235,8 +235,12 @@ guessForm.addEventListener('submit', (e) => {
     return;
   }
   if(userGuessNorm === current.song){
-    score += clueUsed ? 1 : 2;
-    updateScore(score);
+    // Read score from cookie, add points, update cookie and UI
+    let prevScore = Number(getCookie('score'));
+    if (isNaN(prevScore)) prevScore = 0;
+    const addPoints = clueUsed ? 1 : 2;
+    const newScore = prevScore + addPoints;
+    updateScore(newScore);
     showFeedback('Oikein! Kappale oli: ' + current.rawSong, 'success');
     document.cookie = `completed_date=${getTodayDateStr()};path=/;max-age=86400`;
     const submitBtn = document.getElementById('submitBtn');
